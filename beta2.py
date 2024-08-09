@@ -65,12 +65,6 @@ def measure_widths_in_area(mask, y_positions, x_start, x_end, min_gap=15):
                 ]
                 if len(disc_index) > 0:
                     disc = disc_index[0]
-                    # print(
-                    #     "disc_index",
-                    #     disc,
-                    #     x_indices[disc - 1],
-                    #     x_indices[disc],
-                    # )
                     d = x_indices[disc] - x_indices[disc - 1]
                 else:
                     d = None
