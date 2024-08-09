@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 
 # 读取图像
-image_path = "/mnt/data/image.png"
-image_path = "images/GL135141V1L0XFCA1+P13434443114-Normal.jpg"
+image_path = "images/bench_images/GL135141V1L0XFCA1+P13434443114.jpg"
+# image_path = "images/bench_images/GL135141V3E0XFCA1+P13152515314.jpg"
 image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
 # 使用 Gaussian 模糊来平滑图像，减少噪声
@@ -30,17 +30,20 @@ mask = np.zeros_like(image)
 cv2.drawContours(mask, contours, -1, 255, thickness=cv2.FILLED)
 
 # 定义分析的区域
-x_start, x_end = 350, 440
+x_start, x_end = 350, 450
 y_start, y_end = 800, 1000
 
 # 指定测量位置的Y坐标
-y_positions = [830, 900, 980]
+# y_positions = [830, 900, 980]
+y_positions = [840, 900, 980]
 
 
-p1, radius = (x_start, y_start), 20
-p2, radius = (x_end, y_end), 20
-cv2.circle(mask, p1, radius, 255, -1)
-cv2.circle(mask, p2, radius, 255, -1)
+p1, radius = (x_start, y_start), 10
+p2, radius = (x_end, y_end), 10
+
+
+x_indices_list = []
+disc_index_list = []
 
 
 # 仅分析指定区域内的这些Y坐标
@@ -50,6 +53,7 @@ def measure_widths_in_area(mask, y_positions, x_start, x_end, min_gap=15):
         # 仅分析指定区域内的X坐标
         if y_start <= y <= y_end:
             x_indices = np.where(mask[y, x_start:x_end] == 255)[0] + x_start
+            x_indices_list.append(x_indices)
             print("x_indices", x_indices)
             if len(x_indices) >= 2:
                 # 外边缘宽度 D
@@ -70,24 +74,10 @@ def measure_widths_in_area(mask, y_positions, x_start, x_end, min_gap=15):
                     d = x_indices[disc] - x_indices[disc - 1]
                 else:
                     d = None
-                # print("d", d)
-
                 measurements.append((D, d))
             else:
                 measurements.append((None, None))
-
-            # 在每个不连续点位置画纵线
-            for point in disc_index:
-                x = x_indices
-                width = 500
-                height = 500
-                point = x_indices[point]
-                print("point", point)
-                # 将点的位置映射到图像宽度范围内（假设点的值直接映射到图像x轴）
-                x_pos = int((point - min(x)) / (max(x) - min(x)) * (width - 1))
-                # 在该位置画一条纵线
-                cv2.line(image, (x_pos, 0), (x_pos, height), (0, 0, 255), 2)
-
+            disc_index_list.append(disc_index)
         else:
             measurements.append((None, None))
     return measurements
@@ -101,6 +91,22 @@ width_average = [(D + d) / 2 for D, d in widths]
 output_image = cv2.cvtColor(
     mask, cv2.COLOR_GRAY2BGR
 )  # 将灰度图像转换为BGR以便绘制彩色线条
+
+for i, x_indices in enumerate(x_indices_list):
+    height = 5
+    disc_index = disc_index_list[i]
+    # 在每个不连续点位置画纵线
+    y = y_positions[i]
+    Dx1, Dx2 = x_indices[-1], x_indices[0]
+    cv2.line(output_image, (Dx1, y - height), (Dx1, y + height), (255, 0, 0), 1)
+    cv2.line(output_image, (Dx2, y - height), (Dx2, y + height), (255, 0, 0), 1)
+    print("Dx1, Dx2", Dx1, Dx2)
+    for idx in disc_index:
+        x1, x2 = x_indices[idx], x_indices[idx - 1]
+        print("x1, x2", x1, x2)
+        # print(y - height, y + height)
+        cv2.line(output_image, (x1, y - height), (x1, y + height), (255, 0, 0), 1)
+        cv2.line(output_image, (x2, y - height), (x2, y + height), (255, 0, 0), 1)
 
 
 for i, (D, d) in enumerate(widths):
@@ -128,9 +134,17 @@ for i, (D, d) in enumerate(widths):
             1,
         )
 
+
+scale = 58.5 / 0.63  # = 92.85
+width_average_real = [w / scale for w in width_average]
+
 # 显示结果
 print("widths", widths)
 print("width_average", width_average)
+print("width_average_real", width_average_real)
+
+
+cv2.rectangle(output_image, p1, p2, (0, 255, 0), 1)
 
 cv2.imshow("Measurement Results", output_image)
 cv2.waitKey(0)

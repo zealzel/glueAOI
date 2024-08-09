@@ -34,7 +34,7 @@ x_start, x_end = 300, 590
 y_start, y_end = 600, 1200
 
 # 指定测量位置的Y坐标
-y_positions = [830, 900, 980]
+y_positions = [850, 900, 950]
 
 
 p1, radius = (350, 800), 20
