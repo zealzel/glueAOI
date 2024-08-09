@@ -97,12 +97,10 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
 
     # 计算实际宽度
     scale = 58.5 / 0.63  # = 92.85
-    scale10 = 91.3348
+    scale10 = 91.3348 # average ratio (aoi/groundtruth) of 10 records
 
     # width_average_real = [w / scale for w in width_average]
     width_average_real = [w / scale10 for w in width_average]
-
-
 
     # limist to precision 4
     width_average_real = [round(w, 4) for w in width_average_real]
@@ -119,20 +117,37 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
     csv_path = os.path.join(outdir, "output.csv")
     file_exists = os.path.isfile(csv_path)
 
-    with open(csv_path, mode='a', newline='') as file:
+    with open(csv_path, mode="a", newline="") as file:
         writer = csv.writer(file)
         if not file_exists:
             # 写入CSV文件的表头
-            writer.writerow(['imagename', "gt1","gt2","gt3",'w1', 'w2', 'w3', 'W1', 'W2', 'W3','D1', 'd1', 'D2', 'd2', 'D3', 'd3'])
+            writer.writerow(
+                [
+                    "imagename",
+                    "gt1", "gt2", "gt3",
+                    "w1", "w2", "w3",
+                    "W1", "W2", "W3",
+                    "error1", "error2", "error3",
+                    "D1", "d1",
+                    "D2", "d2",
+                    "D3", "d3",
+                ]
+            )
         # 写入每个图像的测量数据
+        gt1, gt2, gt3 = [float(e) for e in gt_values]
+        w1, w2, w3 = [float(e) for e in width_average_real]
+        # import ipdb; ipdb.set_trace()
         row = [
             imagename,
-            gt_values[0], gt_values[1], gt_values[2],
-            width_average_real[0], width_average_real[1], width_average_real[2],
+            gt1, gt2, gt3,
+            w1, w2, w3,
             width_average[0], width_average[1], width_average[2],
+            round((w1 - gt1) / gt1 * 100, 1),
+            round((w2 - gt2) / gt2 * 100, 1),
+            round((w3 - gt3) / gt3 * 100, 1),
             widths[0][0], widths[0][1],
             widths[1][0], widths[1][1],
-            widths[2][0], widths[2][1]
+            widths[2][0], widths[2][1],
         ]
         writer.writerow(row)
 
