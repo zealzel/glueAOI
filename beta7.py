@@ -139,6 +139,7 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
                 ]
             )
         # 写入每个图像的测量数据
+        w1, w2, w3 = [float(e) for e in width_average_real]
         try:
             gt1, gt2, gt3 = [float(e) for e in gt_values]
             error1, error2, error3 = [
@@ -148,7 +149,7 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
             ]
         except ValueError:
             gt1 = gt2 = gt3 = error1 = error2 = error3 = "N/A"
-        w1, w2, w3 = [float(e) for e in width_average_real]
+            
         # import ipdb; ipdb.set_trace()
         row = [
             imagename,
