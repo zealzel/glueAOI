@@ -215,7 +215,7 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
 
 # 取得指定資料夾下所有圖片的路徑
 def get_jpeg_file_paths(folder_path):
-    for file_path in glob.iglob(os.path.join(folder_path, '**', 'GL*.jpg'), recursive=False):
+    for file_path in glob.iglob(os.path.join(folder_path, '**', 'GL*.jpg'), recursive=True):
         yield file_path
 
 if __name__ == "__main__":
@@ -246,4 +246,5 @@ if __name__ == "__main__":
 
 
 for image_path in get_jpeg_file_paths("images/bench_images/"):
+    print(image_path)
     parse_image(outdir, groundtruth_data, image_path, show, verbose)
