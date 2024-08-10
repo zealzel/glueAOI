@@ -139,7 +139,15 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
                 ]
             )
         # 写入每个图像的测量数据
-        gt1, gt2, gt3 = [float(e) for e in gt_values]
+        try:
+            gt1, gt2, gt3 = [float(e) for e in gt_values]
+            error1, error2, error3 = [
+                round((w1 - gt1) / gt1 * 100, 1),
+                round((w2 - gt2) / gt2 * 100, 1),
+                round((w3 - gt3) / gt3 * 100, 1)
+            ]
+        except ValueError:
+            gt1 = gt2 = gt3 = error1 = error2 = error3 = "N/A"
         w1, w2, w3 = [float(e) for e in width_average_real]
         # import ipdb; ipdb.set_trace()
         row = [
@@ -147,9 +155,7 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
             gt1, gt2, gt3,
             w1, w2, w3,
             width_average[0], width_average[1], width_average[2],
-            round((w1 - gt1) / gt1 * 100, 1),
-            round((w2 - gt2) / gt2 * 100, 1),
-            round((w3 - gt3) / gt3 * 100, 1),
+            error1, error2, error3,
             widths[0][0], widths[0][1],
             widths[1][0], widths[1][1],
             widths[2][0], widths[2][1],
@@ -243,6 +249,9 @@ if __name__ == "__main__":
             for row in reader:
                 imagename, gt1, gt2, gt3 = row[0], row[1], row[2], row[3]
                 groundtruth_data[imagename] = [gt1, gt2, gt3]
+    else:
+        if verbose:
+            print(f"No {groundtruth_path} detected")
 
 
 for image_path in get_jpeg_file_paths("images/bench_images/"):
