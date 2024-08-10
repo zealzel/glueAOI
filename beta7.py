@@ -1,4 +1,5 @@
 import os
+import glob
 import cv2
 import numpy as np
 import csv
@@ -212,6 +213,11 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
     cv2.imwrite(f"{outdir}/{imagename}.png", cropped_image)
 
 
+# 取得指定資料夾下所有圖片的路徑
+def get_jpeg_file_paths(folder_path):
+    for file_path in glob.iglob(os.path.join(folder_path, '**', 'GL*.jpg'), recursive=False):
+        yield file_path
+
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--outdir", type=str, default="out")
@@ -238,18 +244,6 @@ if __name__ == "__main__":
                 imagename, gt1, gt2, gt3 = row[0], row[1], row[2], row[3]
                 groundtruth_data[imagename] = [gt1, gt2, gt3]
 
-    imagepaths = [
-        "images/bench_images/GL135141V1L0XFCA1+P13434443114.jpg",
-        "images/bench_images/GL135141V3E0XFCA1+P13152515314.jpg",
-        "images/bench_images/GL135141V6X0XFCA9+P12276145B14.jpg",
-        "images/bench_images/GL135141VA80XFCAL+P13126776514.jpg",
-        "images/bench_images/GL135141W1X0XFCAP+P13417553114.jpg",
-        "images/bench_images/GL135141W4U0XFCAH+P12163853114.jpg",
-        "images/bench_images/GL135141X2S0XFCAQ+P13437334614.jpg",
-        "images/bench_images/GL135141X3S0XFCAM+P13148724914.jpg",
-        "images/bench_images/GL135141X3T0XFCAL+P13224253614.jpg",
-        "images/bench_images/GL135141X4N0XFCAN+P13284764B14.jpg",
-    ]
 
-for image_path in imagepaths:
+for image_path in get_jpeg_file_paths("images/bench_images/"):
     parse_image(outdir, groundtruth_data, image_path, show, verbose)
