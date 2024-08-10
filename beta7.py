@@ -51,8 +51,8 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
     cv2.drawContours(mask, contours, -1, 255, thickness=cv2.FILLED)
 
     # 定义分析的区域
-    x_start, x_end = 350, 450
-    y_start, y_end = 800, 1000
+    x_start, x_end = 350, 500
+    y_start, y_end = 780, 1030
 
     # 指定测量位置的Y坐标
     y_positions = [840, 900, 980]
