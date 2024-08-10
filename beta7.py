@@ -93,7 +93,11 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
 
     # 测量宽度
     widths = measure_widths_in_area(mask, y_positions, x_start, x_end)
-    width_average = [(D + d) / 2 for D, d in widths]
+    try:
+        width_average = [(D + d) / 2 for D, d in widths]
+    except TypeError:
+        print(f"Type Error, image {image_path} not processed")
+        return
 
     # 计算实际宽度
     scale = 58.5 / 0.63  # = 92.85
