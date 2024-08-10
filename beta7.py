@@ -54,8 +54,8 @@ def parse_image(outdir, groundtruth_data, image_path=None, show=False, verbose=F
     x_start, x_end = 350, 500
     y_start, y_end = 780, 1030
 
-    # 指定测量位置的Y坐标
-    y_positions = [840, 900, 980]
+    # 指定测量位置的Y坐标(中間點正負0.6mm)
+    y_positions = [845, 910, 975]
 
     x_indices_list = []
     disc_index_list = []
