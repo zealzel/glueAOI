@@ -246,5 +246,4 @@ if __name__ == "__main__":
 
 
 for image_path in get_jpeg_file_paths("images/bench_images/"):
-    print(image_path)
     parse_image(outdir, groundtruth_data, image_path, show, verbose)
