@@ -138,7 +138,7 @@ def parse_image(
 
     # limist to precision 4
     width_average_real = [round(w, 4) for w in width_average_real]
-    width_d_real = [round(w, 4) for w in width_d_real]
+    width_d_real = [round(w, 3) for w in width_d_real]
 
     if verbose:
         print("widths", widths)
@@ -210,6 +210,7 @@ def parse_image(
         y = y_positions[i]
         if D is not None and d is not None:
             cv2.line(output_image, (x_start, y), (x_end, y), (0, 0, 255), 1)
+            cv2.putText(output_image, f"w{i+1}={width_d_real[i]}mm", (x_start + 55, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
             cv2.putText(output_image, f"d{i+1}={d}px", (x_start + 55, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
 
     # 在图像上绘制矩形区域
@@ -309,3 +310,10 @@ for image_path in get_jpeg_file_paths(dir):
     if image_path in bigerr:
         print("image_path", image_path)
         parse_image(outdir, groundtruth_data, image_path, show, show_early, verbose)
+
+    # ==== snippts ====
+    # show aoi image one by one
+    # python alpha1.py --verbose --show
+    #
+    # only show preliminary edge-find image one by one, no measure
+    # python alpha1.py --verbose --show_early
