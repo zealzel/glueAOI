@@ -70,7 +70,11 @@ def parse_image(
     y_start, y_end = 780, 1030
 
     # 指定测量位置的Y坐标(中間點正負0.6mm)
-    y_positions = [845, 910, 975]
+    # offset = 0.6*scale
+    offset = 50
+    center = 910
+    y_positions = [center-offset, center, center+offset]
+    # y_positions = [845, 910, 975]
 
     x_indices_list = []
     disc_index_list = []
@@ -129,7 +133,9 @@ def parse_image(
     # 计算实际宽度
     # scale = 58.5 / 0.63  # = 92.85
     # scale10 = 91.3348  # average ratio (aoi/groundtruth) of 10 records
-    scaleNew = 83.486
+    #
+    # scaleNew = 83.486 #10 averate
+    scaleNew = 88.161 # 30 average
     scale = scaleNew
 
     # width_average_real = [w / scale for w in width_average]
@@ -307,9 +313,9 @@ bigerr = [
 
 # for image_path in get_jpeg_file_paths("images/bench_images/"):
 for image_path in get_jpeg_file_paths(dir):
-    if image_path in bigerr:
-        print("image_path", image_path)
-        parse_image(outdir, groundtruth_data, image_path, show, show_early, verbose)
+    # if image_path in bigerr:
+    print("image_path", image_path)
+    parse_image(outdir, groundtruth_data, image_path, show, show_early, verbose)
 
     # ==== snippts ====
     # show aoi image one by one

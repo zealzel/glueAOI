@@ -13,7 +13,9 @@ df['short'] =df['imagename'].str.slice(-6,-1)
 X=df[['short', 'gt1', 'gt2', 'gt3', 'w1', 'w2', 'w3','error1', 'error2', 'error3']]
 
 
+find_large = lambda df, error: df[(df['error1'].abs() > error) | (df['error2'].abs() > error) | (df['error3'].abs() > error)]
 
-TT=20
-rr = X[(X['error1'].abs() > TT) | (X['error2'].abs() > TT) | (X['error3'].abs() > TT)]
+
+# find either error1 or error2 or error3 is larger than 20%
+find_large(df, 20)
 
