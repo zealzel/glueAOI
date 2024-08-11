@@ -6,32 +6,16 @@ import csv
 from argparse import ArgumentParser
 
 
-def core_process(image, blur_radius=31, block_size=15, C=2, contours_keep=3):
-    blur_radius, block_size, C, contours_keep = 31, 21, 2, 4  # <-- new default
-    # blur_radius, block_size, C, contours_keep = 31, 15, 2, 3 # <-- new default
-    # blur_radius, block_size, C, contours_keep = 13, 11, 2, 4  # <--- beta6
-
-    # 使用 Gaussian 模糊来平滑图像，减少噪声
-    image = cv2.GaussianBlur(image, (blur_radius, blur_radius), 0)
-
-    # 使用自适应阈值来进行二值化
-    binary = cv2.adaptiveThreshold(
-        image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, block_size, C
-    )
-
-    # 反转颜色，使得白色部分为我们感兴趣的区域
-    binary = cv2.bitwise_not(binary)
-
-    # 寻找轮廓
-    contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-    # 选择最大的轮廓进行简化和平滑
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:contours_keep]
-
-    # 选择最内层的轮廓来绘制
-    mask = np.zeros_like(image)
-    cv2.drawContours(mask, contours, -1, 255, thickness=cv2.FILLED)
-    return mask, contours
+# def core_process(image, blur_radius=31, block_size=15, C=2, contours_keep=3):
+def core_process(image):
+    # image = cv2.imread(image_path)
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(image, 255, 255)
+    edges_inv = cv2.bitwise_not(edges)
+    blurred_image = cv2.GaussianBlur(image, (5, 5), 0)
+    mask = cv2.bitwise_and(blurred_image, blurred_image, mask=edges_inv)
+    mask = cv2.bitwise_or(mask, image, mask=edges)
+    return mask
 
 
 def parse_image(
@@ -63,7 +47,7 @@ def parse_image(
                     print(f"{imagename} 已存在，跳过.")
                 return
 
-    mask, contours = core_process(image)
+    mask = core_process(image)
 
     # 定义分析的区域
     x_start, x_end = 350, 500
@@ -86,62 +70,78 @@ def parse_image(
         return
 
     # 仅分析指定区域内的这些Y坐标
+    # def measure_widths_in_area(mask, y_positions, x_start, x_end, min_gap=15):
+    #     measurements = []
+    #     for y in y_positions:
+    #         # 仅分析指定区域内的X坐标
+    #         if y_start <= y <= y_end:
+    #             x_indices = np.where(mask[y, x_start:x_end] == 255)[0] + x_start
+    #             x_indices_list.append(x_indices)
+    #             if verbose:
+    #                 print(f"x_indices at y={y}: {x_indices}")
+    #             if len(x_indices) >= 2:
+    #                 # 外边缘宽度 D
+    #                 D = x_indices[-1] - x_indices[0]
+    #                 disc_index = [
+    #                     i
+    #                     for i in range(1, len(x_indices))
+    #                     if x_indices[i] - x_indices[i - 1] > 1
+    #                 ]
+    #                 if len(disc_index) > 0:
+    #                     disc = disc_index[0]
+    #                     d = x_indices[disc] - x_indices[disc - 1]
+    #                 else:
+    #                     d = None
+    #                 measurements.append((D, d))
+    #             else:
+    #                 measurements.append((None, None))
+    #             disc_index_list.append(disc_index)
+    #         else:
+    #             measurements.append((None, None))
+    #     return measurements
+
     def measure_widths_in_area(mask, y_positions, x_start, x_end, min_gap=15):
         measurements = []
-        disc_threshold = 5
+        widths = []
         for y in y_positions:
-            # 仅分析指定区域内的X坐标
             if y_start <= y <= y_end:
-                x_indices = np.where(mask[y, x_start:x_end] == 255)[0] + x_start
-                x_indices_list.append(x_indices)
-                if verbose:
-                    print(f"x_indices at y={y}: {x_indices}")
-                if len(x_indices) >= 2:
-                    # 外边缘宽度 D
-                    D = x_indices[-1] - x_indices[0]
-                    disc_index = [
-                        i
-                        for i in range(1, len(x_indices))
-                        if x_indices[i] - x_indices[i - 1] > disc_threshold
-                    ]
-                    if len(disc_index) > 0:
-                        disc = disc_index[0]
-                        d = x_indices[disc] - x_indices[disc - 1]
-                    else:
-                        d = None
-                    measurements.append((D, d))
-                else:
-                    measurements.append((None, None))
-                disc_index_list.append(disc_index)
-            else:
-                measurements.append((None, None))
-        return measurements
+                x_indices = np.where(mask[y, x_start:x_end] > 100)[0] + x_start
+                print("x_indices", x_indices)
+                width = x_indices[-1] - x_indices[0]
+                print("width", width)
+                widths.append(width)
+        return widths
 
     # 测量宽度
-    widths = measure_widths_in_area(mask, y_positions, x_start, x_end)
-    widths_d = [d for D, d in widths]
-    try:
-        width_average = [(D + d) / 2 for D, d in widths]
-    except TypeError:
-        print(f"Type Error, image {image_path} not processed")
-        return
+    # widths = measure_widths_in_area(mask, y_positions, x_start, x_end)
+    # widths_d = [d for D, d in widths]
+    # try:
+    #     width_average = [(D + d) / 2 for D, d in widths]
+    # except TypeError:
+    #     print(f"Type Error, image {image_path} not processed")
+    #     return
+    #
+
+    widths_d = measure_widths_in_area(mask, y_positions, x_start, x_end, min_gap=15)
 
     # 计算实际宽度
     # scale = 58.5 / 0.63  # = 92.85
     # scale10 = 91.3348  # average ratio (aoi/groundtruth) of 10 records
-    scaleNew = 83.486
+    scaleNew = 87.39
     scale = scaleNew
 
     # width_average_real = [w / scale for w in width_average]
-    width_average_real = [w / scale for w in width_average]
+    # width_average_real = [w / scale for w in width_average]
     width_d_real = [w / scale for w in widths_d]
 
     # limist to precision 4
-    width_average_real = [round(w, 4) for w in width_average_real]
+    # width_average_real = [round(w, 4) for w in width_average_real]
     width_d_real = [round(w, 4) for w in width_d_real]
 
     if verbose:
-        print("widths", widths)
+        print("widths_d", widths_d)
+        # print("width_average", width_average)
+        # print("width_average_real", width_average_real)
 
     # 获取 ground truth 数据
     gt_values = groundtruth_data.get(imagename, ["N/A", "N/A", "N/A"])
@@ -159,11 +159,14 @@ def parse_image(
                     "imagename",
                     "gt1", "gt2", "gt3",
                     "w1", "w2", "w3",
-                    "error1", "error2", "error3",
-                    "d1", "d2", "d3",
+                    "W1", "W2", "W3",
+                    "error1",
+                    "error2",
+                    "error3",
                 ]
             )
         # 写入每个图像的测量数据
+        # w1, w2, w3 = [float(e) for e in width_average_real]
         w1, w2, w3 = [float(e) for e in width_d_real]
 
         try:
@@ -181,14 +184,13 @@ def parse_image(
             imagename,
             gt1, gt2, gt3,
             w1, w2, w3,
+            widths_d[0], widths_d[1], widths_d[2],
             error1, error2, error3,
-            widths[0][1], widths[1][1], widths[2][1],
         ]
         writer.writerow(row)
 
     # 在图像上绘制测量结果
     output_image = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-    image0 = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
     for i, x_indices in enumerate(x_indices_list):
         height = 5
@@ -201,41 +203,47 @@ def parse_image(
         if disc_index:
             idx = disc_index[0]
             x1, x2 = x_indices[idx - 1], x_indices[idx]
-            # if verbose:
-            #     print(f"Dx1={Dx1}, Dx2={Dx2}, x1={x1}, x2={x2}")
+            if verbose:
+                print(f"Dx1={Dx1}, Dx2={Dx2}, x1={x1}, x2={x2}")
             cv2.line(output_image, (x1, y - height), (x1, y + height), (255, 0, 0), 1)
             cv2.line(output_image, (x2, y - height), (x2, y + height), (255, 0, 0), 1)
 
-    for i, (D, d) in enumerate(widths):
-        y = y_positions[i]
-        if D is not None and d is not None:
-            cv2.line(output_image, (x_start, y), (x_end, y), (0, 0, 255), 1)
-            cv2.putText(output_image, f"d{i+1}={d}px", (x_start + 55, y + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+    # for i, (D, d) in enumerate(widths):
+    #     y = y_positions[i]
+    #     if D is not None and d is not None:
+    #         cv2.line(output_image, (x_start, y), (x_end, y), (0, 0, 255), 1)
+    #         cv2.putText(
+    #             output_image,
+    #             f"D{i+1} = {D}px",
+    #             (x_start + 5, y - 10),
+    #             cv2.FONT_HERSHEY_SIMPLEX,
+    #             0.6,
+    #             (0, 0, 255),
+    #             1,
+    #         )
+    #         cv2.putText(
+    #             output_image,
+    #             f"d{i+1} = {d}px",
+    #             (x_start + 5, y + 20),
+    #             cv2.FONT_HERSHEY_SIMPLEX,
+    #             0.6,
+    #             (0, 0, 255),
+    #             1,
+    #         )
 
     # 在图像上绘制矩形区域
     cv2.rectangle(output_image, (x_start, y_start), (x_end, y_end), (0, 255, 0), 1)
-    cropped_image = output_image[y_start:y_end, x_start:x_end]
-    cropped_image0 = image0[y_start:y_end, x_start:x_end]
 
-    # cv2.namedWindow("show", cv2.WINDOW_NORMAL)
-    # cv2.imshow("show", cropped_image)
-    # cv2.resizeWindow("show", 450, 650)
-    # cv2.namedWindow("show0", cv2.WINDOW_NORMAL)
-    # cv2.imshow("show0", cropped_image0)
-    # cv2.resizeWindow("show0", 450, 650)
-    combined_image = cv2.hconcat([cropped_image, cropped_image0])
-    cv2.namedWindow("combined_show", cv2.WINDOW_NORMAL)
-    cv2.putText(combined_image, f"{imagename}", (10,20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
+    # 裁剪图像仅保留感兴趣区域
+    cropped_image = output_image[y_start:y_end, x_start:x_end]
 
     if show:
-        cv2.imshow("combined_show", combined_image)
-        cv2.resizeWindow("combined_show", 1000, 800)
+        cv2.imshow("Measurement Results", cropped_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
     # 保存结果图像
-    # cv2.imwrite(f"{outdir}/{imagename}.png", cropped_image)
-    cv2.imwrite(f"{outdir}/{imagename}.png", combined_image)
+    cv2.imwrite(f"{outdir}/{imagename}.png", cropped_image)
 
 
 # 取得指定資料夾下所有圖片的路徑
@@ -282,30 +290,18 @@ if __name__ == "__main__":
             print(f"No {groundtruth_path} detected")
 
 
-bigerr = [
-    # "images/bench_images/GL1H5E1106J0000QTC+21146523B21.jpg",
-    # "images/bench_images/GL1H5E1103Y0000QTC+21132144A21.jpg",
-    # "images/bench_images/GL1H5E110480000QTC+21128873821.jpg",
-    # "images/bench_images/GL1H5E1102T0000QTC+21132823B21.jpg",
-    # "images/bench_images/GL1H5F110B20000QTC+21136625821.jpg",
-    # "images/bench_images/GL1H5F110CD0000QTC+21172545B21.jpg",
-    # "images/bench_images/GL1H5F110AQ0000QTC+21141575821.jpg",
-    # "images/bench_images/GL1H5F110BB0000QTC+21165653721.jpg",
-    # "images/bench_images/GL1H5E1106M0000QTC+21185136221.jpg",
-    # "images/bench_images/GL1H5F110FP0000QTC+21265365521.jpg",
-    #
-    "images/bench_images/GL1H5E1103Y0000QTC+21132144A21.jpg",
-    "images/bench_images/GL1H5E110480000QTC+21128873821.jpg",
-    "images/bench_images/GL1H5F110B20000QTC+21136625821.jpg",
-    "images/bench_images/GL1H5F110CD0000QTC+21172545B21.jpg",
-    "images/bench_images/GL1H5F110AQ0000QTC+21141575821.jpg",
-    "images/bench_images/GL1H5F110BB0000QTC+21165653721.jpg",
-    "images/bench_images/GL1H5E1106M0000QTC+21185136221.jpg",
-    "images/bench_images/GL1H5F110FP0000QTC+21265365521.jpg",
+issues=[
+    "images/bench_images/GL1H5F110EZ0000QTC+21111824421.jpg",
+    "images/bench_images/GL1H5F1107E0000QTC+21112744A21.jpg",
 ]
 
-# for image_path in get_jpeg_file_paths("images/bench_images/"):
+
 for image_path in get_jpeg_file_paths(dir):
-    if image_path in bigerr:
-        print("image_path", image_path)
+    # if "GL1H5E110480000QTC+21128873821.jpg" in image_path:
+    # if "GL1H5F110F10000QTC+21157834721.jpg" in image_path:
+    # if "GL1H5F110F90000QTC+21158544721.jpg" in image_path:
+    # if "GL1H5E1104S0000QTC+21168144621.jpg" in image_path:
+    # if "GL1H5E110480000QTC+21128873821.jpg" in image_path:
+    print("image_path", image_path)
+    if image_path not in issues:
         parse_image(outdir, groundtruth_data, image_path, show, show_early, verbose)
