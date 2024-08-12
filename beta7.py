@@ -18,8 +18,8 @@ def core_process(image, blur_radius=31, block_size=15, C=2, contours_keep=3):
     # binary = cv2.adaptiveThreshold(
     #     image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, block_size, C
     # )
-    blured_image = cv2.medianBlur(image, 5)
-    _, binary = cv2.threshold(blured_image, 200, 255,cv2.THRESH_BINARY)
+    image = cv2.medianBlur(image, 5)
+    _, binary = cv2.threshold(image, 200, 255,cv2.THRESH_BINARY)
 
     # 反转颜色，使得白色部分为我们感兴趣的区域
     binary = cv2.bitwise_not(binary)
@@ -65,18 +65,37 @@ def parse_image(
                     print(f"{imagename} 已存在，跳过.")
                 return
 
-    mask, contours = core_process(image)
-
     # 定义分析的区域
     x_start, x_end = 350, 500
     y_start, y_end = 780, 1030
+
+    mask, contours = core_process(image)
+
+    def get_center_y(mask, y_start, y_end, x_end):
+        try:
+            inner_top_y = None
+            inner_bottom_y = None
+            for y in range(y_start, y_end):
+                if mask[y,x_end]>125:
+                    inner_top_y = y
+                    break
+            for y in range(y_end, y_start, -1):
+                if mask[y,x_end]>125:
+                    inner_bottom_y = y
+                    break
+            center_y = round((inner_top_y+inner_bottom_y)/2)
+        except Exception:
+            print("Error when calculation center_y, use default center_Y=915")
+            center_y = 915
+
+        return center_y
 
         # 计算实际宽度
     scaleNew = 88.161 # 30 average
     scale = scaleNew
     # 指定测量位置的Y坐标(中間點正負0.6mm)
     offset = 0.6*scale
-    center = 910
+    center = get_center_y(mask, y_start, y_end, x_end)
     y_positions = [round(center-offset), center, round(center+offset)]
 
     x_indices_list = []
