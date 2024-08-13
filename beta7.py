@@ -91,7 +91,7 @@ def parse_image(
         return center_y
 
         # 计算实际宽度
-    scaleNew = 88.161 # 30 average
+    scaleNew = 89.161 # 30 average
     scale = scaleNew
     # 指定测量位置的Y坐标(中間點正負0.6mm)
     offset = 0.6*scale
