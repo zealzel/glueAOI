@@ -246,10 +246,10 @@ def parse_image(
     # cv2.imshow("show0", cropped_image0)
     # cv2.resizeWindow("show0", 450, 650)
     combined_image = cv2.hconcat([cropped_image, cropped_image0])
-    cv2.namedWindow("combined_show", cv2.WINDOW_NORMAL)
-    cv2.putText(combined_image, f"{imagename}", (10,20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
-
+    
     if show:
+        cv2.namedWindow("combined_show", cv2.WINDOW_NORMAL)
+        cv2.putText(combined_image, f"{imagename}", (10,20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
         cv2.imshow("combined_show", combined_image)
         cv2.resizeWindow("combined_show", 1000, 800)
         cv2.waitKey(0)
